@@ -52,7 +52,7 @@ abstract class IntegrationReportJsTestBase extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function getMinkDriverArgs() {
+  protected function getMinkDriverArgs(): string|false {
     $args = parent::getMinkDriverArgs();
     if ($args === FALSE || $args === '') {
       return $args;
