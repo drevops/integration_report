@@ -32,7 +32,7 @@
     },
     "extra": {
         "eddy": {
-            "drupal-version": "11"
+            "drupal-version": "12"
         },
         "phpcodesniffer-search-depth": 10,
         "patches": {},

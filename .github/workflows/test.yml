@@ -33,6 +33,10 @@ jobs:
             php-version: 8.5
             drupal-version: 11
 
+          - name: lint-d12
+            php-version: 8.5
+            drupal-version: 12
+
     name: ${{ matrix.name }}
 
     env:
@@ -147,6 +151,23 @@ jobs:
           - name: test-php-max-d11-canary
             php-version: 8.5
             drupal-version: 11@beta
+            stability: canary
+
+          - name: test-php-min-d12-stable
+            php-version: 8.5
+            drupal-version: 12
+
+          - name: test-php-max-d12-stable
+            php-version: 8.5
+            drupal-version: 12
+
+          - name: test-php-min-d12-legacy
+            php-version: 8.5
+            drupal-version: 12.0.0
+
+          - name: test-php-max-d12-canary
+            php-version: 8.5
+            drupal-version: 12@beta
             stability: canary
 
     services:
