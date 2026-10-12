@@ -34,9 +34,9 @@ abstract class IntegrationReportJsTestBase extends WebDriverTestBase {
     // is reachable as-is. With the 'selenium' backend the browser runs
     // inside a container that cannot reach the host's 'localhost', so a
     // host-reachable address is used instead (host.docker.internal on
-    // macOS, the docker bridge IP on Linux). WEBDRIVER_HOST overrides the
-    // resolved host. In CircleCI all containers share the network
-    // namespace, so no override is needed.
+    // macOS, the default docker bridge IP elsewhere). WEBDRIVER_HOST
+    // overrides the resolved host. In CircleCI all containers share the
+    // network namespace, so no override is needed.
     if (!getenv('CIRCLECI')) {
       $port = getenv('WEBSERVER_PORT') ?: '8000';
       $host = getenv('WEBDRIVER_HOST');
@@ -52,7 +52,7 @@ abstract class IntegrationReportJsTestBase extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function getMinkDriverArgs() {
+  protected function getMinkDriverArgs(): string|false {
     $args = parent::getMinkDriverArgs();
     if ($args === FALSE || $args === '') {
       return $args;
@@ -65,7 +65,7 @@ abstract class IntegrationReportJsTestBase extends WebDriverTestBase {
 
     // The WebDriver endpoint is always reachable at 'localhost'; only the
     // port varies. Both backends serve the endpoint on the per-project
-    // port resolved by '.devtools/browser' (WEBDRIVER_PORT, default 4444).
+    // port resolved by 'eddy-browser-start' (WEBDRIVER_PORT, default 4444).
     $backend = getenv('WEBDRIVER_BACKEND') ?: 'chromedriver';
     $port = getenv('WEBDRIVER_PORT') ?: '4444';
     $decoded[2] = 'http://localhost:' . $port;
