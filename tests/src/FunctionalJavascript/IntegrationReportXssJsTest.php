@@ -34,13 +34,15 @@ class IntegrationReportXssJsTest extends IntegrationReportJsTestBase {
     // Wait for the page JS to be ready.
     $this->assertJsCondition('typeof Drupal.IntegrationReport !== "undefined"');
 
-    // Send a malicious postMessage with XSS payloads in message.
+    // Send a malicious postMessage with XSS payloads in message. An empty
+    // 'src' fails without a network request, so an unsanitized 'onerror'
+    // handler runs before the assertion below.
     $this->getSession()->executeScript(<<<JS
       window.postMessage({
         type: 'IntegrationReportHandler',
         success: true,
         class: 'IntegrationReportExample1',
-        message: '<ul><li>Safe item</li></ul><img src=x onerror="window.xssExecuted=true"><script>window.xssExecuted=true</script>',
+        message: '<ul><li>Safe item</li></ul><img src="" onerror="window.xssExecuted=true"><script>window.xssExecuted=true</script>',
         time: 100
       }, window.location.origin);
     JS);
