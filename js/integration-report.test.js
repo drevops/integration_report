@@ -93,6 +93,24 @@ describe('Drupal.IntegrationReport', function () {
       expect(out).not.toMatch(/javascript:/i);
     });
 
+    test('strips javascript: href obfuscated with control characters', function () {
+      ['java&#9;script:', 'java&#10;script:', '&#1;javascript:'].forEach(
+        function (scheme) {
+          const out = Drupal.IntegrationReport.sanitizeHtml(
+            `<a href="${scheme}alert(1)">link</a>`,
+          );
+          expect(out).not.toContain('href');
+        },
+      );
+    });
+
+    test('strips an href that does not parse as a URL', function () {
+      const out = Drupal.IntegrationReport.sanitizeHtml(
+        '<a href="http://[">link</a>',
+      );
+      expect(out).not.toContain('href');
+    });
+
     test('strips data: href', function () {
       const out = Drupal.IntegrationReport.sanitizeHtml(
         '<a href="data:text/html,<script>evil</script>">link</a>',

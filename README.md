@@ -7,12 +7,12 @@
 
 <div align="center">
 
-[![GitHub Issues](https://img.shields.io/github/issues/AlexSkrypnyk/integration_report.svg)](https://github.com/AlexSkrypnyk/integration_report/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/AlexSkrypnyk/integration_report.svg)](https://github.com/AlexSkrypnyk/integration_report/pulls)
-[![Test](https://github.com/AlexSkrypnyk/integration_report/actions/workflows/test.yml/badge.svg)](https://github.com/AlexSkrypnyk/integration_report/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/AlexSkrypnyk/integration_report/graph/badge.svg?token=8KZAR22D0H)](https://codecov.io/gh/AlexSkrypnyk/integration_report)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/AlexSkrypnyk/integration_report)
-![LICENSE](https://img.shields.io/github/license/AlexSkrypnyk/integration_report)
+[![GitHub Issues](https://img.shields.io/github/issues/drevops/integration_report.svg)](https://github.com/drevops/integration_report/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/drevops/integration_report.svg)](https://github.com/drevops/integration_report/pulls)
+[![Test](https://github.com/drevops/integration_report/actions/workflows/test.yml/badge.svg)](https://github.com/drevops/integration_report/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/drevops/integration_report/graph/badge.svg)](https://codecov.io/gh/drevops/integration_report)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/drevops/integration_report)
+![LICENSE](https://img.shields.io/github/license/drevops/integration_report)
 ![Renovate](https://img.shields.io/badge/renovate-enabled-green?logo=renovatebot)
 
 ![PHP 8.3](https://img.shields.io/badge/PHP-8.3-777BB4.svg)

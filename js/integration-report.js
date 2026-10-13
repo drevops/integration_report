@@ -56,11 +56,24 @@
      * @return {string} The sanitized HTML string.
      */
     sanitizeHtml(html) {
-      const container = document.createElement('div');
+      // Parse into a document without a browsing context, so images in the
+      // markup do not load and their 'onerror' handlers never run.
+      const container = document.implementation.createHTMLDocument('').body;
       container.innerHTML = String(html);
 
       const allowedTags = this.ALLOWED_TAGS;
       const allowedAttrs = this.ALLOWED_ATTRS;
+
+      // Read the scheme through the URL parser, so it matches the scheme the
+      // browser follows after stripping tabs, newlines and control characters.
+      function isSafeUrl(url) {
+        try {
+          const { protocol } = new URL(url, document.baseURI);
+          return !/^(data|javascript|vbscript):$/.test(protocol);
+        } catch {
+          return false;
+        }
+      }
 
       function clean(node) {
         const children = Array.from(node.childNodes);
@@ -114,15 +127,11 @@
             }
 
             // Sanitize href to prevent dangerous URL schemes.
-            if (child.hasAttribute('href')) {
-              const href = child.getAttribute('href').trim().toLowerCase();
-              if (
-                href.startsWith('data:') ||
-                href.startsWith('vbscript:') ||
-                /^\s*javascript\s*:/i.test(child.getAttribute('href'))
-              ) {
-                child.removeAttribute('href');
-              }
+            if (
+              child.hasAttribute('href') &&
+              !isSafeUrl(child.getAttribute('href'))
+            ) {
+              child.removeAttribute('href');
             }
 
             // Recurse into children.
