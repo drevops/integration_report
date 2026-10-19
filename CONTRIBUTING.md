@@ -5,6 +5,8 @@ This document explains how to set up a local development environment, build the 
 ## Local development
 
 1. Install PHP 8.3 or newer with SQLite support and Composer
+   - Install Node.js with npm, which the build and the linters use
+   - Install [Ahoy](https://github.com/ahoy-cli/ahoy)
 2. Clone this repository
 3. Build the website:
 
@@ -16,7 +18,9 @@ This document explains how to set up a local development environment, build the 
 
 Building the website assembles the codebase, starts the PHP server and provisions the Drupal website with this extension enabled. These operations are run by the commands of the [`drevops/eddy-tooling`](https://github.com/drevops/eddy-tooling) package, which `scripts/eddy-tooling` installs into `vendor/`. CI uses the same commands to build and test this extension.
 
-The package version is set in `composer.dev.json`. The installer runs Composer only when that version, the patches declared for the package or the contents of a local patch file change, so a newer patch release reaches a local checkout once `vendor/` is removed.
+Never modify `scripts/eddy-tooling`, by hand or with AI: it comes from Eddy as-is, and a scaffold update replaces it with the release's copy. To change what a tooling command does, declare a patch for the package (see [Patching dependencies](#patching-dependencies)).
+
+The package version is set in `composer.dev.json`. The installer runs Composer only when that version, the patches declared for the package or the contents of a local patch file change, or when one of its commands is missing from `vendor/bin`, so a newer patch release reaches a local checkout once `vendor/` is removed.
 
 The resulting codebase is then placed in the `build` directory. The extension files are symlinked into the Drupal site structure.
 
@@ -30,9 +34,11 @@ ahoy provision    # Provision the Drupal website
 
 The `provision` command is useful for re-installing the Drupal website without re-assembling the codebase.
 
+The `info` command prints a read-only summary of the environment, such as the PHP, Drupal and Drush versions, the site URL and the database path. The `reset` command stops the development server and removes the `build`, `.logs` and `vendor` directories.
+
 ### Drupal versions
 
-The Drupal version used for the codebase assembly is determined by the `DRUPAL_VERSION` variable and defaults to the highest Drupal major this extension targets, which `composer.dev.json` sets as `extra.eddy.drupal-version`.
+The Drupal version used for the codebase assembly is determined by the `DRUPAL_VERSION` variable and defaults to `extra.eddy.drupal-version` in `composer.dev.json`, the newest Drupal major this extension targets that has a stable release.
 
 You can specify a different version by setting the `DRUPAL_VERSION` environment variable when building the website:
 
@@ -50,9 +56,9 @@ DRUPAL_VERSION=11@beta ahoy build
 DRUPAL_VERSION=12 ahoy build
 ```
 
-The build pins Drupal core to the newest release matching `DRUPAL_VERSION` and prints it. A version with no stable release yet resolves to its newest pre-release.
+The build pins Drupal core to the newest release matching `DRUPAL_VERSION` and prints it. A version with no stable release yet resolves to its newest pre-release. When that release requires a newer PHP than the one running the build, the build stops before it changes anything and says which PHP the release needs.
 
-Every other dependency installs its most stable release that supports that core. A dependency falls back to a pre-release or a development branch only when no stable release fits, and the build output lists every dependency installed from a development branch.
+Every other dependency installs its most stable release that supports that core and the PHP running the build, or the `config.platform.php` that `composer.dev.json` or `composer.json` sets, even when the global Composer configuration sets its own. A dependency falls back to a pre-release or a development branch only when no stable release fits, and the build output lists every dependency installed from a development branch.
 
 ### Patching dependencies
 
@@ -74,13 +80,13 @@ A patch that no longer applies fails the build. Patches declared for `drevops/ed
 
 ### Providing `GITHUB_TOKEN`
 
-To overcome GitHub API rate limits, you may provide a `GITHUB_TOKEN` environment variable with a personal access token.
+To overcome GitHub API rate limits, you may provide a `GITHUB_TOKEN` environment variable with a personal access token. The build passes it to its own Composer commands through `COMPOSER_AUTH`, so the global Composer configuration stays as it is.
 
 ### Provisioning the website
 
-The `provision` command installs the Drupal website from the `standard` profile with the extension (and any `suggest`'ed extensions) enabled. The profile can be changed by setting the `DRUPAL_PROFILE` environment variable.
+The `provision` command installs the Drupal website from the `standard` profile with the extension (and any `drupal/*` modules and themes in `suggest`) enabled. The profile can be changed by setting the `DRUPAL_PROFILE` environment variable.
 
-The website will be available at http://localhost:8000 by default. The hostname can be changed by setting the `WEBSERVER_HOST` environment variable.
+The website is served at `http://localhost:8000`, or at the first free port up to 8099 when another process uses 8000, as described below, and the `start` command prints the URL. The hostname can be changed by setting the `WEBSERVER_HOST` environment variable.
 
 The `WEBSERVER_PORT` is resolved with the following precedence:
 
@@ -89,6 +95,8 @@ The `WEBSERVER_PORT` is resolved with the following precedence:
 3. **Neither is set** - the `start` script discovers the first free port in the range `8000-8099` and writes it to `.env` as `WEBSERVER_PORT=NNNN`. Subsequent commands read this value from `.env`.
 
 To force re-discovery, delete `.env` (or just the `WEBSERVER_PORT` line in it) and re-run the `start` command.
+
+The `start` and `stop` commands only stop the webserver that serves the project's own `build/web`. When another process holds the port, such as the server of another project that recorded the same port, `stop` leaves it running and `start` fails and names it. Stop that process, or set `WEBSERVER_PORT` in `.env` to a free port.
 
 An SQLite database is created in `/tmp/site_integration_report.sqlite` file. You can browse the contents of the created SQLite database using [DB Browser for SQLite](https://sqlitebrowser.org/).
 
@@ -114,7 +122,7 @@ To start and stop debug sessions from the browser, install the Xdebug Helper ext
 ## Coding standards
 
 The codebase is checked using multiple tools:
-- PHP code standards checking against `Drupal` and `DrupalPractice` standards.
+- PHP code standards checking against `Drupal`, `DrupalPractice`, `DrevOps` and `PHPCompatibility` standards.
 - PHP code static analysis with PHPStan.
 - PHP deprecated code analysis and auto-fixing with Drupal Rector.
 - Twig code analysis with Twig CS Fixer.
@@ -145,7 +153,7 @@ Run the tests for this extension with:
 ahoy test
 ```
 
-The tests are located in the `tests/src` directory. The `phpunit.xml` file configures PHPUnit to run the tests. It uses Drupal core's bootstrap file `web/core/tests/bootstrap.php` to bootstrap the Drupal environment before running the tests.
+The tests are located in the `tests/src` directory. The `phpunit.xml` file configures PHPUnit to run the tests, and `phpunit.d10.xml` replaces it in a Drupal 10 build. Both use Drupal core's bootstrap file `web/core/tests/bootstrap.php` to bootstrap the Drupal environment before running the tests.
 
 Each test suite can also be run on its own:
 
@@ -169,6 +177,8 @@ ahoy browser-stop
 
 The `test` and `test-functional-javascript` commands both start the browser before they run the suite. It keeps running afterwards, so the next run reuses it - stop it with `browser-stop` when you're done.
 
+The `browser-start` command reuses a browser of the selected backend that already answers on the WebDriver port. Otherwise it replaces the project's own browser, whichever backend that is, so switching `WEBDRIVER_BACKEND` doesn't need a `browser-stop` first. It fails and names whatever else holds the port. The `browser-stop` command stops only the project's own browser, so the browser of another project that recorded the same port keeps running.
+
 To run the browser in a Docker Selenium container instead, set `WEBDRIVER_BACKEND=selenium`. The container cannot reach the host's `localhost`, so start the webserver on all interfaces:
 
 ```bash
@@ -180,15 +190,16 @@ ahoy browser-stop
 
 The browser reaches the webserver at `localhost` with the default backend, and at `host.docker.internal` (macOS) or `172.17.0.1` (other systems) from the Selenium container. Set `WEBDRIVER_HOST` to use a different address.
 
-Either backend gets its own WebDriver port: a free one is claimed starting at 4444 and stored in `.env`, so several projects can run FunctionalJavascript tests at the same time. Set `WEBDRIVER_PORT` to pin a specific one. Tests reach the claimed port because the base class applies it to the WebDriver endpoint, so extend `IntegrationReportJsTestBase` rather than `WebDriverTestBase` directly - a test that bypasses it keeps the default endpoint from `phpunit.xml` unless it exports its own `MINK_DRIVER_ARGS_WEBDRIVER`.
+Each project gets its own WebDriver port, whichever backend it uses: a free one is claimed starting at 4444 and stored in `.env`, so several projects can run FunctionalJavascript tests at the same time. Set `WEBDRIVER_PORT` to pin a specific one. Tests reach the claimed port because the base class applies it to the WebDriver endpoint, so extend `IntegrationReportJsTestBase` rather than `WebDriverTestBase` directly - a test that bypasses it keeps the default endpoint from `phpunit.xml` unless it exports its own `MINK_DRIVER_ARGS_WEBDRIVER`.
 
 ### Running specific tests
 
-You can run specific tests by passing a path to the test file or PHPUnit CLI option (`--filter`, `--group`, etc.) to the test commands. PHPUnit runs inside `build`, so a test path starts at the extension's symlink in the assembled site (`web/themes/custom/` for a theme):
+You can run specific tests by passing a path to the test file or PHPUnit CLI option (`--filter`, `--group`, etc.) to the test commands. PHPUnit runs inside `build`, so a test path starts at the extension's symlink in the assembled site:
 
 ```bash
 ahoy test-unit web/modules/custom/integration_report/tests/src/Unit/MyUnitTest.php
 ahoy test-unit -- --group=wip
+ahoy test-unit -- --filter=MyUnitTest::testSomething
 ```
 
 You may also run tests using the `phpunit` command directly:
@@ -198,4 +209,5 @@ cd build
 php -d pcov.directory=.. vendor/bin/phpunit \
   web/modules/custom/integration_report/tests/src/Unit/MyUnitTest.php
 php -d pcov.directory=.. vendor/bin/phpunit --group=wip
+php -d pcov.directory=.. vendor/bin/phpunit --filter=MyUnitTest::testSomething
 ```
