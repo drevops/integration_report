@@ -8,7 +8,6 @@ commands:
   build:
     usage: Build or rebuild the project.
     cmd: |
-      ahoy stop > /dev/null 2>&1 || true
       ahoy assemble
       ahoy start
       ahoy provision
@@ -48,10 +47,7 @@ commands:
 
   login:
     usage: Login to a website.
-    cmd: |
-      url="$(ahoy drush uli)"
-      printf '%s\n' "$url"
-      if [ -n "$LOGIN_QRCODE" ]; then vendor/bin/eddy-qrcode "$url"; fi
+    cmd: vendor/bin/eddy-login
 
   lint:
     usage: Check coding standards for violations.
@@ -161,8 +157,10 @@ entrypoint:
   - -e
   - |
     # Ahoy's 'env' option puts .env over the shell, so .env is loaded here and
-    # the non-empty exported shell variables are restored after it.
-    if [ -f .env ]; then shell_env="$(export -p | sed '/=""$/d')"; set -a; . ./.env; set +a; eval "$shell_env"; fi
+    # the non-empty exported shell variables are restored after it. Readonly
+    # ones such as SHELLOPTS are skipped by their 'r' flag, which 'export -p'
+    # omits in POSIX mode and 'declare -x' doesn't.
+    if [ -f .env ]; then shell_env="$(declare -x | sed -e '/=""$/d' -e '/^declare -[^ ]*r/d')"; set -a; . ./.env; set +a; eval "$shell_env"; fi
     # Resolve a relative TMPDIR to an absolute path so tools that chdir (pushd
     # build) still find it. No-op when unset or already absolute.
     if [ -n "${TMPDIR:-}" ]; then case "$TMPDIR" in /*) ;; *) TMPDIR="$PWD/$TMPDIR" ;; esac; mkdir -p "$TMPDIR"; export TMPDIR; fi
