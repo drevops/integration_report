@@ -25,7 +25,7 @@
     "@homer0/prettier-plugin-jsdoc": "^11.1.0",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^10.1.8",
+    "eslint-config-prettier": "^10.1.9",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsdoc": "^62.9.0",
     "eslint-plugin-no-jquery": "^3.1.1",
